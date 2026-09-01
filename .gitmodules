@@ -1,0 +1,6 @@
+[submodule "backend_auth"]
+	path = backend_auth
+	url = https://github.com/rock4ts/mimicron_auth_be.git
+[submodule "backend_content"]
+	path = backend_content
+	url = https://github.com/rock4ts/mimicron_content_be.git
