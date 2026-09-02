@@ -3,3 +3,4 @@
 .env.*
 envs/*
 !envs/.gitkeep
+!envs/*.example

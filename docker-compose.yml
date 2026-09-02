@@ -1,0 +1,128 @@
+name: mimicron
+
+services:
+  postgres_auth:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+
+  postgres_content:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: mimicron
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: mimicron
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mimicron"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_content_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend_auth:
+    build:
+      context: ./backend_auth
+      dockerfile: Dockerfile
+    depends_on:
+      postgres_auth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - path: envs/auth.env
+        required: false
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_auth
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_PRIVATE_KEY_PATH: /app/certs/jwt-private.pem
+      JWT_PUBLIC_KEY_PATH: /app/certs/jwt-public.pem
+    volumes:
+      - ./backend_auth/tests/docker/certs:/app/certs:ro
+    command:
+      [
+        "sh",
+        "-c",
+        "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    ports:
+      - "8000:8000"
+
+  backend_content:
+    build:
+      context: ./backend_content
+      dockerfile: Dockerfile
+    depends_on:
+      postgres_content:
+        condition: service_healthy
+    env_file:
+      - path: envs/content.env
+        required: false
+    environment:
+      POSTGRES_DB: mimicron
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: mimicron
+      POSTGRES_HOST: postgres_content
+      POSTGRES_PORT: 5432
+      JWT_ALGORITHM: RS256
+      JWT_PUBLIC_KEY_PATH: /app/certs/jwt-public.pem
+    volumes:
+      - ./backend_auth/tests/docker/certs/jwt-public.pem:/app/certs/jwt-public.pem:ro
+    command:
+      [
+        "sh",
+        "-c",
+        "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    ports:
+      - "8001:8000"
+
+volumes:
+  postgres_auth_data:
+  postgres_content_data:
