@@ -59,6 +59,7 @@ services:
       REDIS_PORT: 6379
       JWT_PRIVATE_KEY_PATH: /app/certs/jwt-private.pem
       JWT_PUBLIC_KEY_PATH: /app/certs/jwt-public.pem
+      ROOT_PATH: /auth/api
     volumes:
       - ./backend_auth/tests/docker/certs:/app/certs:ro
     command:
@@ -100,6 +101,7 @@ services:
       POSTGRES_PORT: 5432
       JWT_ALGORITHM: RS256
       JWT_PUBLIC_KEY_PATH: /app/certs/jwt-public.pem
+      ROOT_PATH: /content/api
     volumes:
       - ./backend_auth/tests/docker/certs/jwt-public.pem:/app/certs/jwt-public.pem:ro
     command:
