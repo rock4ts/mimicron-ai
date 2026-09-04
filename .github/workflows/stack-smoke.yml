@@ -1,0 +1,45 @@
+name: stack-smoke
+
+on:
+  pull_request:
+    paths:
+      - docker-compose.yml
+      - envs/*.example
+      - scripts/smoke-bff.sh
+      - frontend/**
+      - .github/workflows/stack-smoke.yml
+  push:
+    paths:
+      - docker-compose.yml
+      - envs/*.example
+      - scripts/smoke-bff.sh
+      - frontend/**
+      - .github/workflows/stack-smoke.yml
+    branches: [main]
+
+jobs:
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: docker compose config >/dev/null
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: compose-config
+    if: success()
+    steps:
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            Mimicron stack smoke — ${{ github.event_name == 'pull_request' && 'pull request' || 'push' }}
+            CI: ${{ needs.compose-config.result }}
+            by ${{ github.actor }} on ${{ github.head_ref || github.ref_name }}
+            ${{ github.event_name == 'pull_request' && format('PR #{0}: {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message }}
+            ${{ github.event.pull_request.html_url || format('{0}/{1}/commit/{2}', github.server_url, github.repository, github.sha) }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

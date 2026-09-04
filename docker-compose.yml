@@ -125,6 +125,51 @@ services:
     ports:
       - "8001:8000"
 
+  redis_bff:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend_auth:
+        condition: service_healthy
+      backend_content:
+        condition: service_healthy
+      redis_bff:
+        condition: service_healthy
+    env_file:
+      - path: envs/frontend.env
+        required: false
+    environment:
+      AUTH_INTERNAL_URL: http://backend_auth:8000
+      CONTENT_INTERNAL_URL: http://backend_content:8000
+      REDIS_URL: redis://redis_bff:6379/0
+      APP_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
+      REQUEST_ID_HEADER: x-request-id
+      BFF_MESSAGE_TIMEOUT_MS: "70000"
+      PROD_RUN: "false"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    ports:
+      - "3000:3000"
+
 volumes:
   postgres_auth_data:
   postgres_content_data:
