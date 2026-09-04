@@ -1,12 +1,13 @@
 # Mimicron
 
-Parent repository for the Mimicron backends. Each service lives in its own
+Parent repository for Mimicron services. Each service lives in its own
 repository and is tracked here as a git submodule.
 
 | Path | Repository |
 |---|---|
 | `backend_auth` | [mimicron_auth_be](https://github.com/rock4ts/mimicron_auth_be) — JWT identity, users, Yandex OAuth |
 | `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — AI companion API, protected by auth-service JWTs |
+| `frontend` | [mimicron_fe](https://github.com/rock4ts/mimicron_fe) — Next.js UI and BFF |
 
 ## Clone
 
@@ -86,5 +87,6 @@ auth service until the Next.js callback exists.
 
 - `backend_auth/` — Auth API. See [`backend_auth/README.md`](backend_auth/README.md).
 - `backend_content/` — Content API. See [`backend_content/README.md`](backend_content/README.md).
+- `frontend/` — Next.js UI and BFF. See [`frontend/README.md`](frontend/README.md).
 - `docker-compose.yml` — parent Compose file for a shared local environment.
 - `envs/` — local environment files; not committed. Examples: `envs/*.example`.

@@ -4,3 +4,6 @@
 [submodule "backend_content"]
 	path = backend_content
 	url = https://github.com/rock4ts/mimicron_content_be.git
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/rock4ts/mimicron_fe.git
