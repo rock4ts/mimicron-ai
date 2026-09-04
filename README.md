@@ -1,29 +1,29 @@
 # Mimicron
 
-Parent repository for Mimicron services. Each service lives in its own
-repository and is tracked here as a git submodule.
+Родительский репозиторий сервисов Mimicron. Каждый сервис живёт в собственном
+репозитории и подключается сюда как git-подмодуль.
 
-| Path | Repository |
+| Путь | Репозиторий |
 |---|---|
-| `backend_auth` | [mimicron_auth_be](https://github.com/rock4ts/mimicron_auth_be) — JWT identity, users, Yandex OAuth |
-| `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — AI companion API, protected by auth-service JWTs |
-| `frontend` | [mimicron_fe](https://github.com/rock4ts/mimicron_fe) — Next.js UI and BFF |
+| `backend_auth` | [mimicron_auth_be](https://github.com/rock4ts/mimicron_auth_be) — JWT-идентичность, пользователи, Yandex OAuth |
+| `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — API AI-компаньона, защищён JWT сервиса авторизации |
+| `frontend` | [mimicron_fe](https://github.com/rock4ts/mimicron_fe) — UI на Next.js и BFF |
 
-## Clone
+## Клонирование
 
 ```bash
 git clone --recurse-submodules <parent-url>
 ```
 
-If you already cloned without submodules:
+Если репозиторий уже склонирован без подмодулей:
 
 ```bash
 git submodule update --init
 ```
 
-## Run the stack
+## Запуск стека
 
-Copy the example env files and fill in secrets (`LLM_API_KEY`, Yandex OAuth):
+Скопируйте примеры env-файлов и заполните секреты (`LLM_API_KEY`, Yandex OAuth):
 
 ```bash
 cp envs/auth.env.example envs/auth.env
@@ -31,19 +31,20 @@ cp envs/content.env.example envs/content.env
 cp envs/frontend.env.example envs/frontend.env
 ```
 
-Then:
+Затем:
 
 ```bash
 docker compose up --build
 ```
 
-Compose starts a dedicated PostgreSQL for each backend, Redis for auth, Redis
-for BFF sessions, then runs Alembic migrations and the Next.js BFF.
+Compose поднимает отдельный PostgreSQL для каждого бэкенда, Redis для auth,
+Redis для сессий BFF, затем запускает миграции Alembic и Next.js BFF.
 
-The browser origin is <http://localhost:3000>. Auth `:8000` and content `:8001`
-are local diagnostics only and should not be published in production.
+Браузерный origin — <http://localhost:3000>. Auth `:8000` и content `:8001`
+нужны только для локальной диагностики и не должны быть опубликованы в
+продакшене.
 
-| Service | Direct URL | Gateway prefix (`ROOT_PATH`) |
+| Сервис | Прямой URL | Префикс шлюза (`ROOT_PATH`) |
 |---|---|---|
 | Frontend / BFF | <http://localhost:3000> | — |
 | Auth API | <http://localhost:8000> | `/auth/api` |
@@ -51,59 +52,60 @@ are local diagnostics only and should not be published in production.
 | Content API | <http://localhost:8001> | `/content/api` |
 | Content Swagger | <http://localhost:8001/docs> | `/content/api` |
 
-`ROOT_PATH` only changes OpenAPI/Swagger public URLs. Route matching stays at
-the bare paths (`/health`, `/token`, `/companions`, …). The BFF calls internal
-URLs such as `http://backend_auth:8000/token` — never `/auth/api` or
+`ROOT_PATH` меняет только публичные URL OpenAPI/Swagger. Сопоставление маршрутов
+остаётся по «голым» путям (`/health`, `/token`, `/companions`, …). BFF вызывает
+внутренние URL вида `http://backend_auth:8000/token` — никогда `/auth/api` или
 `/content/api`.
 
-PostgreSQL and both Redis instances stay on the Compose network and are not
-published to the host.
+PostgreSQL и оба экземпляра Redis остаются в сети Compose и не публикуются на
+хост.
 
 ```bash
 docker compose exec postgres_auth psql -U admin -d auth
 docker compose exec postgres_content psql -U admin -d mimicron
 ```
 
-Stop:
+Остановка:
 
 ```bash
 docker compose down
 ```
 
-## Frontend / BFF contract
+## Контракт Frontend / BFF
 
-The browser talks to one origin (Next.js). Next.js:
+Браузер общается с одним origin (Next.js). Next.js:
 
-1. Calls auth server-to-server (`POST /token`, `POST /refresh`, Yandex start/callback).
-2. Stores access JWTs and auth cookies (`refresh`, `device_id`, OAuth `state`) in
-   a dedicated Redis session. The browser receives only an opaque `HttpOnly`
-   session cookie (`mimicron-session` locally, `__Host-mimicron-session` in
-   production).
-3. Never returns access or refresh tokens to browser JavaScript.
-4. Calls content with `Authorization: Bearer <access>`.
-5. Forwards `x-request-id` on every backend request.
-6. Uses a long read timeout on `POST /conversations/{id}/messages` (LLM default
-   timeout is 60 seconds; BFF default is 70 seconds).
-7. Requires `Origin` plus `x-csrf: 1` on mutating `/api/*` requests.
+1. Вызывает auth server-to-server (`POST /token`, `POST /refresh`, старт/callback Yandex).
+2. Хранит access JWT и auth-cookie (`refresh`, `device_id`, OAuth `state`) в
+   выделенной Redis-сессии. Браузер получает только непрозрачную `HttpOnly`
+   cookie сессии (`mimicron-session` локально, `__Host-mimicron-session` в
+   продакшене).
+3. Никогда не отдаёт access- или refresh-токены в JavaScript браузера.
+4. Вызывает content с заголовком `Authorization: Bearer <access>`.
+5. Пробрасывает `x-request-id` в каждый запрос к бэкенду.
+6. Использует длинный read timeout на `POST /conversations/{id}/messages`
+   (таймаут LLM по умолчанию — 60 секунд; у BFF — 70 секунд).
+7. Требует `Origin` и `x-csrf: 1` на мутирующих запросах `/api/*`.
 
-Do not add CORS to the Python APIs. Register Yandex
-`YANDEXID_REDIRECT_URL` as `http://localhost:3000/api/auth/yandex/callback`
-(or the production equivalent).
+Не добавляйте CORS в Python API. Зарегистрируйте Yandex
+`YANDEXID_REDIRECT_URL` как `http://localhost:3000/api/auth/yandex/callback`
+(или продакшен-эквивалент).
 
-Local auth rate limiting sees the BFF address unless a trusted ingress sets
-`TRUST_PROXY_HEADERS` / `TRUSTED_PROXY_IPS` and the BFF `TRUST_PROXY` flag.
+Локальное ограничение частоты запросов auth видит адрес BFF, если доверенный
+ingress не выставил `TRUST_PROXY_HEADERS` / `TRUSTED_PROXY_IPS` и флаг BFF
+`TRUST_PROXY`.
 
 ## CI
 
-GitHub Actions (`.github/workflows/stack-smoke.yml`) checks `docker compose config`
-on pull request and push to `main` when Compose, env examples, smoke scripts, or
-frontend files change. On success the workflow sends a Telegram message; add
-`TELEGRAM_CHAT_ID` and `TELEGRAM_BOT_TOKEN` as repository secrets.
+GitHub Actions (`.github/workflows/stack-smoke.yml`) проверяет `docker compose config`
+на pull request и push в `main`, когда меняются Compose, примеры env, smoke-скрипты
+или файлы frontend. При успехе workflow отправляет сообщение в Telegram; добавьте
+`TELEGRAM_CHAT_ID` и `TELEGRAM_BOT_TOKEN` как секреты репозитория.
 
-## Layout
+## Структура
 
-- `backend_auth/` — Auth API. See [`backend_auth/README.md`](backend_auth/README.md).
-- `backend_content/` — Content API. See [`backend_content/README.md`](backend_content/README.md).
-- `frontend/` — Next.js UI and BFF. See [`frontend/README.md`](frontend/README.md).
-- `docker-compose.yml` — parent Compose file for a shared local environment.
-- `envs/` — local environment files; not committed. Examples: `envs/*.example`.
+- `backend_auth/` — Auth API. См. [`backend_auth/README.md`](backend_auth/README.md).
+- `backend_content/` — Content API. См. [`backend_content/README.md`](backend_content/README.md).
+- `frontend/` — UI на Next.js и BFF. См. [`frontend/README.md`](frontend/README.md).
+- `docker-compose.yml` — родительский Compose-файл для общего локального окружения.
+- `envs/` — локальные файлы окружения; не коммитятся. Примеры: `envs/*.example`.
