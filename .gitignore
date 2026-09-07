@@ -4,3 +4,4 @@
 envs/*
 !envs/.gitkeep
 !envs/*.example
+.pnpm-store
