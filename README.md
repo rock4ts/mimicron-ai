@@ -6,7 +6,7 @@
 | Путь | Репозиторий |
 |---|---|
 | `backend_auth` | [mimicron_auth_be](https://github.com/rock4ts/mimicron_auth_be) — JWT-идентичность, пользователи, Yandex OAuth |
-| `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — API AI-компаньона и долгосрочная память в PostgreSQL, защищён JWT сервиса авторизации |
+| `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — API AI-компаньона, извлечение долгосрочной памяти из диалогов и её хранение в PostgreSQL, защищён JWT сервиса авторизации |
 | `frontend` | [mimicron_fe](https://github.com/rock4ts/mimicron_fe) — UI на Next.js и BFF |
 
 ## Клонирование
