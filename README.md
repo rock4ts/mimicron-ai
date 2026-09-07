@@ -99,7 +99,8 @@ ingress не выставил `TRUST_PROXY_HEADERS` / `TRUSTED_PROXY_IPS` и ф�
 
 GitHub Actions (`.github/workflows/stack-smoke.yml`) проверяет `docker compose config`
 на pull request и push в `main`, когда меняются Compose, примеры env, smoke-скрипты
-или файлы frontend. При успехе workflow отправляет сообщение в Telegram; добавьте
+или файлы frontend. После успешного или неуспешного прогона workflow отправляет
+сообщение в Telegram (не при отмене запуска); добавьте
 `TELEGRAM_CHAT_ID` и `TELEGRAM_BOT_TOKEN` как секреты репозитория.
 
 ## Структура
