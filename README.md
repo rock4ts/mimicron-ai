@@ -84,7 +84,8 @@ docker compose down
 4. Вызывает content с заголовком `Authorization: Bearer <access>`.
 5. Пробрасывает `x-request-id` в каждый запрос к бэкенду.
 6. Использует длинный read timeout на `POST /conversations/{id}/messages`
-   (таймаут LLM по умолчанию — 60 секунд; у BFF — 70 секунд).
+   (таймаут LLM по умолчанию — 60 секунд; у BFF — 70 секунд). Первая реплика
+   может включать второй нефатальный вызов LLM для названия диалога.
 7. Требует `Origin` и `x-csrf: 1` на мутирующих запросах `/api/*`.
 
 Не добавляйте CORS в Python API. Зарегистрируйте Yandex
