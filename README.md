@@ -6,7 +6,7 @@
 | Путь | Репозиторий |
 |---|---|
 | `backend_auth` | [mimicron_auth_be](https://github.com/rock4ts/mimicron_auth_be) — JWT-идентичность, пользователи, Yandex OAuth |
-| `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — API AI-компаньона, извлечение долгосрочной памяти из диалогов и её хранение в PostgreSQL, защищён JWT сервиса авторизации |
+| `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — API AI-компаньона, извлечение долгосрочной памяти из диалогов, хранение в PostgreSQL и векторный индекс в Qdrant, защищён JWT сервиса авторизации |
 | `frontend` | [mimicron_fe](https://github.com/rock4ts/mimicron_fe) — UI на Next.js и BFF |
 
 ## Клонирование
@@ -38,7 +38,8 @@ docker compose up --build
 ```
 
 Compose поднимает отдельный PostgreSQL для каждого бэкенда, Redis для auth,
-Redis для сессий BFF, затем запускает миграции Alembic и Next.js BFF.
+Redis для сессий BFF, Qdrant для векторного индекса воспоминаний, затем запускает
+миграции Alembic и Next.js BFF.
 
 Браузерный origin — <http://localhost:3000>. Auth `:8000` и content `:8001`
 нужны только для локальной диагностики и не должны быть опубликованы в
@@ -57,8 +58,7 @@ Redis для сессий BFF, затем запускает миграции Al
 внутренние URL вида `http://backend_auth:8000/token` — никогда `/auth/api` или
 `/content/api`.
 
-PostgreSQL и оба экземпляра Redis остаются в сети Compose и не публикуются на
-хост.
+PostgreSQL, Redis и Qdrant остаются в сети Compose и не публикуются на хост.
 
 ```bash
 docker compose exec postgres_auth psql -U admin -d auth
