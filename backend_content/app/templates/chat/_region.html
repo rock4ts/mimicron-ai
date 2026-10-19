@@ -1,0 +1,80 @@
+<main id="chat-region" class="chat-shell">
+  <header class="chat-header">
+    <a class="back-button" href="/ui/companions/{{ companion.id }}" aria-label="Back to companion">
+      ←
+    </a>
+    <span class="avatar" aria-hidden="true">{{ companion.name[0] | upper }}</span>
+    <div>
+      <h1>{{ companion.name }}</h1>
+      <p>AI companion</p>
+    </div>
+  </header>
+
+  <section
+    class="message-log"
+    aria-label="Conversation with {{ companion.name }}"
+    aria-live="polite"
+    data-chat-log
+  >
+    {% if messages %}
+      {% for message in messages %}
+        <article class="message {{ message.role.value }}">
+          <div class="message-meta">
+            <strong>{{ "You" if message.role.value == "user" else companion.name }}</strong>
+            <time datetime="{{ message.created_at.isoformat() }}">{{ message.created_at | datetime }}</time>
+          </div>
+          <p>{{ message.content }}</p>
+        </article>
+      {% endfor %}
+    {% else %}
+      <div class="chat-empty">
+        <span class="avatar avatar-large" aria-hidden="true">{{ companion.name[0] | upper }}</span>
+        <h2>Start a conversation with {{ companion.name }}</h2>
+        <p>Your messages become part of this conversation's memory.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <div class="composer-wrap">
+    {% if chat_error %}
+      <div class="notice error" role="alert">
+        <strong>Reply unavailable</strong>
+        <p>{{ chat_error }}</p>
+      </div>
+    {% endif %}
+    <form
+      class="composer"
+      method="post"
+      action="/ui/conversations/{{ conversation.id }}/messages"
+      hx-post="/ui/conversations/{{ conversation.id }}/messages"
+      hx-target="#chat-region"
+      hx-swap="outerHTML"
+      hx-disabled-elt="find button, find textarea"
+      hx-sync="this:drop"
+      novalidate
+    >
+      <div class="field grow">
+        <label class="sr-only" for="message-content">Message {{ companion.name }}</label>
+        <textarea
+          id="message-content"
+          name="content"
+          rows="2"
+          maxlength="20000"
+          placeholder="Write a message..."
+          aria-describedby="{% if form_errors.get('content') %}message-content-error{% endif %}"
+          aria-invalid="{{ 'true' if form_errors.get('content') else 'false' }}"
+          required
+          autofocus
+        >{{ form_values.get('content', '') }}</textarea>
+        {% if form_errors.get("content") %}
+          <p id="message-content-error" class="field-error">{{ form_errors.content }}</p>
+        {% endif %}
+      </div>
+      <button class="button primary send-button" type="submit">
+        <span class="send-label">Send</span>
+        <span class="htmx-indicator spinner" aria-hidden="true"></span>
+      </button>
+    </form>
+    <p class="composer-note">AI responses can be inaccurate. Keep sensitive information private.</p>
+  </div>
+</main>

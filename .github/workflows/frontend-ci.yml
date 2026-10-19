@@ -1,0 +1,69 @@
+name: frontend-ci
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v5
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+        env:
+          REDIS_URL: redis://127.0.0.1:6379/0
+          APP_ORIGIN: http://127.0.0.1:3000,http://localhost:3000
+          AUTH_INTERNAL_URL: http://127.0.0.1:8000
+          CONTENT_INTERNAL_URL: http://127.0.0.1:8001
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: quality
+    if: always() && !cancelled()
+    steps:
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            Mimicron Frontend — ${{ github.event_name == 'pull_request' && 'pull request' || 'push' }}
+            CI: ${{ needs.quality.result }}
+            by ${{ github.actor }} on ${{ github.head_ref || github.ref_name }}
+            ${{ github.event_name == 'pull_request' && format('PR #{0}: {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message }}
+            ${{ github.event.pull_request.html_url || format('{0}/{1}/commit/{2}', github.server_url, github.repository, github.sha) }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

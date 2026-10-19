@@ -1,0 +1,100 @@
+<main id="app-content" class="page-shell">
+  <section class="hero" aria-labelledby="page-title">
+    <div>
+      <p class="eyebrow">AI companions with memory</p>
+      <h1 id="page-title">Who do you want to talk to?</h1>
+      <p class="lede">Create a personality, start a conversation, and pick up where you left off.</p>
+    </div>
+    <form
+      class="panel companion-form"
+      method="post"
+      action="/ui/companions"
+      hx-post="/ui/companions"
+      hx-target="#app-content"
+      hx-swap="outerHTML"
+      hx-disabled-elt="find button"
+      novalidate
+    >
+      <div class="form-heading">
+        <div>
+          <p class="eyebrow">New companion</p>
+          <h2>Create a personality</h2>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="create-name">Name</label>
+        <input
+          id="create-name"
+          name="name"
+          type="text"
+          maxlength="100"
+          value="{{ form_values.get('name', '') }}"
+          aria-describedby="{% if form_errors.get('name') %}create-name-error{% endif %}"
+          aria-invalid="{{ 'true' if form_errors.get('name') else 'false' }}"
+          autocomplete="off"
+          required
+        >
+        {% if form_errors.get("name") %}
+          <p id="create-name-error" class="field-error">{{ form_errors.name }}</p>
+        {% endif %}
+      </div>
+
+      <div class="field">
+        <label for="create-personality">Personality</label>
+        <textarea
+          id="create-personality"
+          name="personality"
+          rows="5"
+          maxlength="10000"
+          aria-describedby="personality-hint{% if form_errors.get('personality') %} create-personality-error{% endif %}"
+          aria-invalid="{{ 'true' if form_errors.get('personality') else 'false' }}"
+          placeholder="Warm, curious, direct, and fond of science fiction..."
+          required
+        >{{ form_values.get('personality', '') }}</textarea>
+        <p id="personality-hint" class="field-hint">Describe their voice, interests, and boundaries.</p>
+        {% if form_errors.get("personality") %}
+          <p id="create-personality-error" class="field-error">{{ form_errors.personality }}</p>
+        {% endif %}
+      </div>
+
+      <button class="button primary" type="submit">
+        <span>Create companion</span>
+        <span class="htmx-indicator spinner" aria-hidden="true"></span>
+      </button>
+    </form>
+  </section>
+
+  <section class="collection" aria-labelledby="companions-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Your circle</p>
+        <h2 id="companions-title">Companions</h2>
+      </div>
+      <span class="count-badge">{{ companions | length }}</span>
+    </div>
+
+    {% if companions %}
+      <div class="card-grid">
+        {% for companion in companions %}
+          <article class="companion-card">
+            <a class="card-link" href="/ui/companions/{{ companion.id }}">
+              <span class="avatar" aria-hidden="true">{{ companion.name[0] | upper }}</span>
+              <span class="card-copy">
+                <strong>{{ companion.name }}</strong>
+                <span>{{ companion.personality }}</span>
+              </span>
+              <span class="arrow" aria-hidden="true">→</span>
+            </a>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <span class="empty-icon" aria-hidden="true">✦</span>
+        <h3>No companions yet</h3>
+        <p>Create your first personality to begin a conversation.</p>
+      </div>
+    {% endif %}
+  </section>
+</main>

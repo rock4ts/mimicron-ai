@@ -1,0 +1,99 @@
+name: content-api-pep
+
+on:
+  pull_request:
+    paths:
+      - "backend_content/**/*.py"
+      - "backend_content/tests/**"
+      - "backend_content/app/templates/**"
+      - "backend_content/app/static/**"
+      - "backend_content/Dockerfile"
+      - "backend_content/Dockerfile.tests"
+      - "backend_content/Dockerfile.tests-app"
+      - "backend_content/docker-compose.tests.yml"
+      - "backend_content/.env.tests"
+      - "backend_content/pyproject.toml"
+      - "backend_content/uv.lock"
+      - ".github/workflows/content-api-pep.yml"
+  push:
+    paths:
+      - "backend_content/**/*.py"
+      - "backend_content/tests/**"
+      - "backend_content/app/templates/**"
+      - "backend_content/app/static/**"
+      - "backend_content/Dockerfile"
+      - "backend_content/Dockerfile.tests"
+      - "backend_content/Dockerfile.tests-app"
+      - "backend_content/docker-compose.tests.yml"
+      - "backend_content/.env.tests"
+      - "backend_content/pyproject.toml"
+      - "backend_content/uv.lock"
+      - ".github/workflows/content-api-pep.yml"
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend_content
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          working-directory: backend_content
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Run lint
+        run: uv run ruff check .
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: ruff
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend_content
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run functional tests
+        run: docker compose -f docker-compose.tests.yml up --build --abort-on-container-exit --exit-code-from tests
+
+      - name: Show test stack logs
+        if: failure()
+        run: docker compose -f docker-compose.tests.yml logs
+
+      - name: Stop test stack
+        if: always()
+        run: docker compose -f docker-compose.tests.yml down --volumes --remove-orphans
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [ruff, tests]
+    if: always() && !cancelled()
+    steps:
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            Mimicron Content BE — ${{ github.event_name == 'pull_request' && 'pull request' || 'push' }}
+            CI ruff: ${{ needs.ruff.result }}
+            CI tests: ${{ needs.tests.result }}
+            by ${{ github.actor }} on ${{ github.head_ref || github.ref_name }}
+            ${{ github.event_name == 'pull_request' && format('PR #{0}: {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message }}
+            ${{ github.event.pull_request.html_url || format('{0}/{1}/commit/{2}', github.server_url, github.repository, github.sha) }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

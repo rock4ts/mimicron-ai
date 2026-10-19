@@ -1,7 +1,10 @@
 .DS_Store
 .env
 .env.*
+!.env.example
+!.env.tests
 envs/*
 !envs/.gitkeep
 !envs/*.example
 .pnpm-store
+.ruff_cache

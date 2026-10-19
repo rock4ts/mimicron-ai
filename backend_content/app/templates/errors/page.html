@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} · Mimicron{% endblock %}
+
+{% block content %}
+  <main class="error-page">
+    {% include "errors/_error.html" %}
+  </main>
+{% endblock %}

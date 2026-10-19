@@ -1,0 +1,148 @@
+<main id="app-content" class="page-shell detail-page">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/ui">← All companions</a>
+  </nav>
+
+  <section class="profile-layout">
+    <article class="panel profile-card">
+      {% if editing %}
+        <form
+          method="post"
+          action="/ui/companions/{{ companion.id }}/edit"
+          hx-post="/ui/companions/{{ companion.id }}/edit"
+          hx-target="#app-content"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find button"
+          novalidate
+        >
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Edit companion</p>
+              <h1>Shape the personality</h1>
+            </div>
+          </div>
+          <div class="field">
+            <label for="edit-name">Name</label>
+            <input
+              id="edit-name"
+              name="name"
+              type="text"
+              maxlength="100"
+              value="{{ form_values.get('name', '') }}"
+              aria-describedby="{% if form_errors.get('name') %}edit-name-error{% endif %}"
+              aria-invalid="{{ 'true' if form_errors.get('name') else 'false' }}"
+              required
+              autofocus
+            >
+            {% if form_errors.get("name") %}
+              <p id="edit-name-error" class="field-error">{{ form_errors.name }}</p>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label for="edit-personality">Personality</label>
+            <textarea
+              id="edit-personality"
+              name="personality"
+              rows="8"
+              maxlength="10000"
+              aria-invalid="{{ 'true' if form_errors.get('personality') else 'false' }}"
+              required
+            >{{ form_values.get('personality', '') }}</textarea>
+            {% if form_errors.get("personality") %}
+              <p class="field-error">{{ form_errors.personality }}</p>
+            {% endif %}
+          </div>
+          <div class="button-row">
+            <button class="button primary" type="submit">
+              <span>Save changes</span>
+              <span class="htmx-indicator spinner" aria-hidden="true"></span>
+            </button>
+            <a
+              class="button secondary"
+              href="/ui/companions/{{ companion.id }}"
+              hx-get="/ui/companions/{{ companion.id }}"
+              hx-target="#app-content"
+              hx-swap="outerHTML"
+            >Cancel</a>
+          </div>
+        </form>
+      {% else %}
+        <div class="profile-heading">
+          <span class="avatar avatar-large" aria-hidden="true">{{ companion.name[0] | upper }}</span>
+          <div>
+            <p class="eyebrow">Your companion</p>
+            <h1>{{ companion.name }}</h1>
+          </div>
+        </div>
+        <p class="personality">{{ companion.personality }}</p>
+        <div class="button-row">
+          <form method="post" action="/ui/companions/{{ companion.id }}/conversations">
+            <button
+              class="button primary"
+              type="submit"
+              hx-post="/ui/companions/{{ companion.id }}/conversations"
+              hx-disabled-elt="this"
+            >
+              <span>Start a new chat</span>
+              <span class="htmx-indicator spinner" aria-hidden="true"></span>
+            </button>
+          </form>
+          <a
+            class="button secondary"
+            href="/ui/companions/{{ companion.id }}/edit"
+            hx-get="/ui/companions/{{ companion.id }}/edit"
+            hx-target="#app-content"
+            hx-swap="outerHTML"
+          >Edit</a>
+        </div>
+      {% endif %}
+    </article>
+
+    <section class="panel history-panel" aria-labelledby="history-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Memory</p>
+          <h2 id="history-title">Past conversations</h2>
+        </div>
+        <span class="count-badge">{{ conversations | length }}</span>
+      </div>
+      {% if conversations %}
+        <ol class="conversation-list">
+          {% for conversation in conversations %}
+            <li>
+              <a href="/ui/conversations/{{ conversation.id }}">
+                <span>
+                  <strong>Conversation</strong>
+                  <small>Updated {{ conversation.updated_at | datetime }}</small>
+                </span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <div class="empty-state compact">
+          <p>No conversations yet. Start one when you are ready.</p>
+        </div>
+      {% endif %}
+    </section>
+  </section>
+
+  <section class="danger-zone" aria-labelledby="danger-title">
+    <div>
+      <h2 id="danger-title">Delete companion</h2>
+      <p>This also permanently deletes every conversation and message.</p>
+    </div>
+    <form method="post" action="/ui/companions/{{ companion.id }}/delete">
+      <button
+        class="button danger"
+        type="submit"
+        hx-delete="/ui/companions/{{ companion.id }}"
+        hx-target="#app-content"
+        hx-swap="outerHTML"
+        hx-confirm="Delete {{ companion.name }} and all conversation history?"
+        hx-disabled-elt="this"
+      >Delete</button>
+    </form>
+  </section>
+</main>

@@ -1,0 +1,87 @@
+name: auth-api-test
+
+services:
+  postgres_test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: auth_test
+      POSTGRES_USER: auth_test
+      POSTGRES_PASSWORD: auth_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_test -d auth_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  yandex-mock:
+    build: ./tests/docker/yandex-mock
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/admin/stats')\"",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  backend_test:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests-app
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      yandex-mock:
+        condition: service_healthy
+    env_file:
+      - .env.tests
+    command:
+      [
+        "sh",
+        "-c",
+        "alembic upgrade head && uvicorn tests.functional.confapp:app --host 0.0.0.0 --port 8000",
+      ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      yandex-mock:
+        condition: service_healthy
+      backend_test:
+        condition: service_healthy
+    env_file:
+      - .env.tests
+    environment:
+      TEST_BASE_URL: http://backend_test:8000
+      POSTGRES_HOST: postgres_test
+      REDIS_HOST: redis
+      YANDEX_MOCK_URL: http://yandex-mock:8080
+    command: ["pytest"]

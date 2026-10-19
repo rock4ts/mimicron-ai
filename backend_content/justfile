@@ -1,0 +1,6 @@
+# Run integration tests in Docker and always remove the test volume.
+run-tests:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    trap 'docker compose -f docker-compose.tests.yml down -v' EXIT
+    docker compose -f docker-compose.tests.yml up --build --abort-on-container-exit --exit-code-from tests

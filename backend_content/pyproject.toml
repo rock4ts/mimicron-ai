@@ -1,0 +1,50 @@
+[project]
+name = "mimicron"
+version = "0.1.0"
+description = "Mimicron AI companion backend"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.14",
+    "asyncpg>=0.30",
+    "fastapi>=0.115",
+    "gigachat>=0.2.3",
+    "jinja2>=3.1.6",
+    "psycopg2-binary>=2.9.12",
+    "pydantic-settings>=2.7",
+    "pyjwt[crypto]>=2.10",
+    "python-multipart>=0.0.32",
+    "qdrant-client>=1.19.0",
+    "sqlalchemy[asyncio]>=2.0",
+    "uvicorn[standard]>=0.34",
+]
+
+[dependency-groups]
+test = [
+    "httpx>=0.28",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "asyncpg>=0.30",
+    "pydantic-settings>=2.7",
+    "sqlalchemy[asyncio]>=2.0",
+    "pyjwt[crypto]>=2.10",
+]
+dev = [
+    { include-group = "test" },
+    "ruff>=0.9",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC"]

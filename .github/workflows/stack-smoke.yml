@@ -6,6 +6,8 @@ on:
       - docker-compose.yml
       - envs/*.example
       - scripts/smoke-bff.sh
+      - backend_auth/**
+      - backend_content/**
       - frontend/**
       - .github/workflows/stack-smoke.yml
   push:
@@ -13,6 +15,8 @@ on:
       - docker-compose.yml
       - envs/*.example
       - scripts/smoke-bff.sh
+      - backend_auth/**
+      - backend_content/**
       - frontend/**
       - .github/workflows/stack-smoke.yml
     branches: [main]

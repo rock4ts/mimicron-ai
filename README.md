@@ -1,24 +1,18 @@
 # Mimicron
 
-Родительский репозиторий сервисов Mimicron. Каждый сервис живёт в собственном
-репозитории и подключается сюда как git-подмодуль.
+Монорепозиторий сервисов Mimicron.
 
-| Путь | Репозиторий |
+| Путь | Назначение |
 |---|---|
-| `backend_auth` | [mimicron_auth_be](https://github.com/rock4ts/mimicron_auth_be) — JWT-идентичность, пользователи, Yandex OAuth |
-| `backend_content` | [mimicron_content_be](https://github.com/rock4ts/mimicron_content_be) — API AI-компаньона, извлечение долгосрочной памяти из диалогов, сверка дубликатов и обновлений, хранение в PostgreSQL, векторный индекс в Qdrant и семантический поиск релевантных воспоминаний при ответе, защищён JWT сервиса авторизации |
-| `frontend` | [mimicron_fe](https://github.com/rock4ts/mimicron_fe) — UI на Next.js и BFF |
+| `backend_auth` | JWT-идентичность, пользователи, Yandex OAuth |
+| `backend_content` | API AI-компаньона, извлечение долгосрочной памяти из диалогов, сверка дубликатов и обновлений, хранение в PostgreSQL, векторный индекс в Qdrant и семантический поиск релевантных воспоминаний при ответе, защищён JWT сервиса авторизации |
+| `frontend` | UI на Next.js и BFF |
 
 ## Клонирование
 
 ```bash
-git clone --recurse-submodules <parent-url>
-```
-
-Если репозиторий уже склонирован без подмодулей:
-
-```bash
-git submodule update --init
+git clone <repo-url>
+cd mimicron-ai
 ```
 
 ## Запуск стека
@@ -98,11 +92,14 @@ ingress не выставил `TRUST_PROXY_HEADERS` / `TRUSTED_PROXY_IPS` и ф�
 
 ## CI
 
-GitHub Actions (`.github/workflows/stack-smoke.yml`) проверяет `docker compose config`
-на pull request и push в `main`, когда меняются Compose, примеры env, smoke-скрипты
-или файлы frontend. После успешного или неуспешного прогона workflow отправляет
-сообщение в Telegram (не при отмене запуска); добавьте
-`TELEGRAM_CHAT_ID` и `TELEGRAM_BOT_TOKEN` как секреты репозитория.
+GitHub Actions (`.github/workflows/`) запускаются условно при изменениях в соответствующих сервисах или общем окружении:
+
+- `.github/workflows/auth-api-pep.yml` — ruff и функциональные тесты `backend_auth` в Docker при изменениях в `backend_auth/**`.
+- `.github/workflows/content-api-pep.yml` — ruff и функциональные тесты `backend_content` в Docker при изменениях в `backend_content/**`.
+- `.github/workflows/frontend-ci.yml` — lint, unit-тесты, сборка, typecheck и Playwright для `frontend` при изменениях в `frontend/**`.
+- `.github/workflows/stack-smoke.yml` — проверка `docker compose config` при изменениях Compose, примеров env, smoke-скриптов или сервисов.
+
+После успешного или неуспешного прогона каждый workflow отправляет сообщение в Telegram (не при отмене запуска); добавьте `TELEGRAM_CHAT_ID` и `TELEGRAM_BOT_TOKEN` как секреты репозитория.
 
 ## Структура
 
