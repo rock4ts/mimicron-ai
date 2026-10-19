@@ -1,7 +1,5 @@
-from typing import Literal
-
-
 import logging
+from typing import Literal
 from uuid import UUID
 
 from app.db.uow import UnitOfWork
